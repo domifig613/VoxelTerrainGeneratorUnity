@@ -39,11 +39,11 @@ public class TerrainGeneratorController : MonoBehaviour
     {
         float[,,] terrainDensityWithoutPositions = new float[terrainDensity.GetLength(0), terrainDensity.GetLength(1), terrainDensity.GetLength(2)];
 
-        for (int x = 0; x < terrainDensity.GetLength(0) - 1; x++)
+        for (int x = 0; x < terrainDensity.GetLength(0); x++)
         {
-            for (int y = 0; y < terrainDensity.GetLength(1) - 1; y++)
+            for (int y = 0; y < terrainDensity.GetLength(1); y++)
             {
-                for (int z = 0; z < terrainDensity.GetLength(2) - 1; z++)
+                for (int z = 0; z < terrainDensity.GetLength(2); z++)
                 {
                     terrainDensityWithoutPositions[x, y, z] = terrainDensity[x, y, z].Item2;
                 }
@@ -51,5 +51,6 @@ public class TerrainGeneratorController : MonoBehaviour
         }
 
         marchingCubes.GenerateMesh(terrainDensityWithoutPositions, Vector3.zero);
+       // marchingCubesAlgorithm.GenerateMesh(terrainDensity);
     }
 }

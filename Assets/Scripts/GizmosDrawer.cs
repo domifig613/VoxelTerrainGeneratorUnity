@@ -72,7 +72,7 @@ public class GizmosDrawer : MonoBehaviour
 
             foreach (var point in terrainDensityCopy)
             {
-                if (point.Item2 > 0)
+                if (point.Item2 > 0f)
                 {
                     Gizmos.DrawWireSphere(point.Item1, 0.1f);
                 }

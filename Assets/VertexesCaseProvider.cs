@@ -5,6 +5,22 @@ public class VertexesCaseProvider : MonoBehaviour
 {
     private int[,,] verticesIndexes = new int[256, 5, 3];
 
+    private int[,,] edgesBetweenVertexIndex = new int[,,]
+    {
+        {{0,0,0}, {0,1,0}},
+        {{0,1,0}, {1,1,0}},
+        {{1,1,0}, {1,0,0}},
+        {{1,0,0}, {0,0,0}},
+        {{0,0,1}, {0,1,1}},
+        {{0,1,1}, {1,1,1}},
+        {{1,1,1}, {1,0,1}},
+        {{1,0,1}, {0,0,1}},
+        {{0,0,0}, {0,0,1}},
+        {{0,1,0}, {0,1,1}},
+        {{1,1,0}, {1,1,1}},
+        {{1,0,0}, {1,0,1}},
+    };
+
     public bool ReadVerticesIndexesFromFile()
     {
         try
@@ -51,15 +67,64 @@ public class VertexesCaseProvider : MonoBehaviour
 
             return true;
         }
-        catch(Exception exception)
+        catch (Exception exception)
         {
             Debug.LogError(exception.Message);
             return false;
         }
     }
 
-    //public int ReadCaseForCube((Vector3, float)[,,] terrainDensity)
-    //{
+    public int ReadCaseForCube(float[,,] terrainDensity)
+    {
+        int wantedCase = 0;
 
-    //}
+        for (int x = 0; x < terrainDensity.GetLength(0); x++)
+        {
+            for (int y = 0; y < terrainDensity.GetLength(1); y++)
+            {
+                for (int z = 0; z < terrainDensity.GetLength(2); z++)
+                {
+                    if (terrainDensity[x, y, z] >= 0f)
+                    {
+                        int counter = 0;
+                        counter += (y > 0 ? (x > 0 ? 2 : 1) : (x > 0 ? 3 : 0));
+                        counter += (z > 0 ? 4 : 0);
+                        wantedCase += (int)Math.Pow(2, counter);
+                    }
+                }
+            }
+        }
+
+        return wantedCase;
+    }
+
+    public int[,] GetVerticesEdgesIndexes(int wantedCase)
+    {
+        int[,] edgesIndexes = new int[5, 3];
+
+        for (int i = 0; i < verticesIndexes.GetLength(1); i++)
+        {
+            for (int j = 0; j < verticesIndexes.GetLength(2); j++)
+            {
+                edgesIndexes[i, j] = verticesIndexes[wantedCase, i, j];
+            }
+        }
+
+        return edgesIndexes;
+    }
+
+    public int[,] GetVertexesIndexInArrayByEdge(int edgeIndex)
+    {
+        int[,] vertex = new int[2,3];
+
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                vertex[i, j] = edgesBetweenVertexIndex[edgeIndex, i, j];
+            }
+        }
+
+        return vertex;
+    }
 }

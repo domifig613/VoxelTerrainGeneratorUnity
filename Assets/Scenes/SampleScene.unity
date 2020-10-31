@@ -223,6 +223,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vertexesCaseProvider: {fileID: 207301820}
+  material: {fileID: 2100000, guid: 1a62d58bd7fe89c45919e2ddb8505d19, type: 2}
 --- !u!114 &207301820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -273,12 +274,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 464829698}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f4e208c16fe62245b1ed56f47df6002, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridSize: {x: 1, y: 1, z: 1}
+  gridSize: {x: 0, y: 0, z: 0}
   densityFunction: {fileID: 144067506}
 --- !u!1 &705507993
 GameObject:
@@ -674,11 +675,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 451aa8ca2f5cadb4690c9777945f5384, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridSize: {x: 3, y: 3, z: 3}
+  gridSize: {x: 128, y: 128, z: 128}
   testing: 0
   testingReverse: 0
-  testingCount: 2
-  testingGenerateCase: 2
+  testingCount: 1
+  testingGenerateCase: 1
   densityFunction: {fileID: 144067506}
   marchingCubesAlgorithm: {fileID: 207301817}
   marchingCubes: {fileID: 207301819}

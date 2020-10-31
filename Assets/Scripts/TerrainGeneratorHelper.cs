@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -100,5 +101,20 @@ public static class TerrainGeneratorHelper
         int z = (firstVector.z == secondVector.z ? 1 : 0);
 
         return new Vector3(x, y, z);
+    }
+
+    internal static Vector3 GetNormalFromTriangle(Vector3[] vertices)
+    {
+        if(vertices.Length >= 3)
+        {
+            Vector3 vector1 = vertices[2] - vertices[0];
+            Vector3 vector2 = vertices[1] - vertices[0];
+
+            return Vector3.Cross(vector2, vector1);
+        }
+        else
+        {
+            return Vector3.zero;
+        }
     }
 }
