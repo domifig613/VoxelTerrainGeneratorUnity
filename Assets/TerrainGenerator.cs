@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 [ExecuteInEditMode]
 public class TerrainGenerator : MonoBehaviour
@@ -24,11 +26,36 @@ public class TerrainGenerator : MonoBehaviour
     [SerializeField] bool enableGizmosDensityDrawer;
     [SerializeField] DensityGizmosDrawer densityGizmosDrawer;
 
+    [Header("Big terrain settings")]
+    [SerializeField] private int xCount = 1;
+    [SerializeField] private int zCount = 1;
+    [SerializeField] private bool bigTerrainEnabled = false;
+
     public static bool wasUpdate = false;
 
-    public void Start()
+    public void OnEnable()
     {
-        GenerateTerrain();
+        if (bigTerrainEnabled)
+        {
+            DestroyEarlierMesh();
+            StartCoroutine(GenerateBigTerrainCoroutine());
+        }
+    }
+
+    private IEnumerator GenerateBigTerrainCoroutine()
+    {
+        startPoint = Vector3.zero;
+
+        for (int i = 0; i < xCount; i++)
+        {
+            for (int j = 0; j < zCount; j++)
+            {
+                startPoint = new Vector3((densitySize.x-1) * i, 0f, (densitySize.z - 1) *j);
+                Debug.Log(i + " " + j);
+                GenerateTerrain();
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
     }
 
     private void Update()
@@ -47,16 +74,16 @@ public class TerrainGenerator : MonoBehaviour
 
     private void GenerateTerrain()
     {
-        //Stopwatch s = new Stopwatch();
-        //s.Start();
+        if (!bigTerrainEnabled)
+        {
+            DestroyEarlierMesh();
+        }
 
         startPoint = new Vector3((int)startPoint.x, (int)startPoint.y, (int)startPoint.z);
         densitySize = new Vector3((int)densitySize.x, (int)densitySize.y, (int)densitySize.z); 
         Vector4[] density = densityGenerator.GetDensity(
             densitySize, pointsSpace, startPoint, noiseScale, noiseWeight, octavesCount);
         Vector4[,,] density1 = ConvertArrayOfVector4To3DimensionalArray(density, densitySize);
-
-        //Print3DimensionalArray(density1);
 
         if (enableGizmosDensityDrawer)
         {
@@ -67,18 +94,7 @@ public class TerrainGenerator : MonoBehaviour
             densityGizmosDrawer.ClearPoints();
         }
 
-        //s.Stop();
-        //UnityEngine.Debug.Log(s.ElapsedMilliseconds);
-        //s.Reset();
-        //s.Start();
-
-        DestroyEarlierMesh();
-        marchingCubes.GenerateMesh
-            (density1, meshGameObject);
-
-        //s.Stop();
-        //UnityEngine.Debug.Log(s.ElapsedMilliseconds);
-        //s.Reset();
+        marchingCubes.GenerateMesh(density1, meshGameObject);
     }
 
     private static void Print3DimensionalArray(Vector4[,,] density1)

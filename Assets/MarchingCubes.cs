@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 public class MarchingCubes : MonoBehaviour
@@ -7,11 +8,11 @@ public class MarchingCubes : MonoBehaviour
     [SerializeField] private Material material;
     [SerializeField] float borderValue = 0f;
 
+    private List<Vector3> meshVertices;
+
     public void GenerateMesh(Vector4[,,] terrainDensity, GameObject terrain)
     {
-        Stopwatch d = new Stopwatch();
-        d.Start();
-
+        meshVertices = new List<Vector3>();
         Vector4[,,] temporaryDensityArray = new Vector4[2, 2, 2];
 
         if (vertexesCaseProvider.ReadVerticesIndexesFromFile())
@@ -24,14 +25,13 @@ public class MarchingCubes : MonoBehaviour
                     {
                         FillTemporaryArray(terrainDensity, temporaryDensityArray, x, y, z);
                         int[,] trianglesEdges = vertexesCaseProvider.GetVerticesEdgesIndexes(vertexesCaseProvider.ReadCaseForCube(temporaryDensityArray, borderValue));
-                        DrawMesh(temporaryDensityArray, trianglesEdges, terrain, borderValue);
+                        CalclulateVertices(temporaryDensityArray, trianglesEdges, borderValue);
                     }
                 }
             }
         }
 
-        d.Stop();
-        UnityEngine.Debug.Log(d.ElapsedMilliseconds);
+        GenerateMesh(terrain);
     }
 
     private void FillTemporaryArray(Vector4[,,] terrainDensity, Vector4[,,] temporaryDensityArray, int x, int y, int z)
@@ -46,7 +46,7 @@ public class MarchingCubes : MonoBehaviour
         temporaryDensityArray[1, 1, 1] = terrainDensity[x + 1, y + 1, z + 1];
     }
 
-    private void DrawMesh(Vector4[,,] terrainDensity, int[,] trianglesEdges, GameObject terrain, float borderValue)
+    private void CalclulateVertices(Vector4[,,] terrainDensity, int[,] trianglesEdges, float borderValue)
     {
         for (int i = 0; i < trianglesEdges.GetLength(0); i++)
         {
@@ -59,7 +59,7 @@ public class MarchingCubes : MonoBehaviour
                     int[,] points = vertexesCaseProvider.GetVertexesIndexInArrayByEdge(trianglesEdges[i, j]);
                     Vector3 firstPoint = new Vector3(
                         terrainDensity[points[0, 0], points[0, 1], points[0, 2]].x,
-                        terrainDensity[points[0, 0], points[0, 1], points[0, 2]].y, 
+                        terrainDensity[points[0, 0], points[0, 1], points[0, 2]].y,
                         terrainDensity[points[0, 0], points[0, 1], points[0, 2]].z);
                     Vector3 secondPoint = new Vector3(
                         terrainDensity[points[1, 0], points[1, 1], points[1, 2]].x,
@@ -73,56 +73,34 @@ public class MarchingCubes : MonoBehaviour
                     vertices[j] = Vector3.Lerp(firstPoint, secondPoint, valueToInterpolate);
                 }
 
-                GameObject terrainPart = new GameObject();
-                terrainPart.name = "Mesh";
-
-                MeshRenderer meshRenderer = terrainPart.AddComponent<MeshRenderer>();
-                meshRenderer.sharedMaterial = material;
-                MeshFilter meshFilter = terrainPart.AddComponent<MeshFilter>();
-
-                Mesh mesh = new Mesh();
-
-                mesh.vertices = vertices;
-
-                int[] tris = new int[3]
-                {
-                    0, 1, 2
-                };
-
-                mesh.triangles = tris;
-
-                Vector3 normal = TerrainGeneratorHelper.GetNormalFromTriangle(vertices);
-
-                Vector3[] normals = new Vector3[3]
-                {
-                     normal,
-                     normal,
-                     normal,
-                };
-
-                mesh.normals = normals;
-
-                Vector2[] uv = new Vector2[3]
-                {
-                        new Vector2(0, 0),
-                        new Vector2(1, 0),
-                        new Vector2(1, 1),
-                };
-
-                mesh.uv = uv;
-
-                Color[] colors = new Color[3]
-                {
-                        Color.red,
-                        Color.green,
-                        Color.blue,
-                };
-
-                mesh.colors = colors;
-
-                meshFilter.mesh = mesh;
-                terrainPart.transform.SetParent(terrain.transform);
+                meshVertices.AddRange(vertices);
             }
         }
+    }
+
+    private void GenerateMesh(GameObject terrain)
+    {
+        GameObject terrainPart = new GameObject();
+        terrainPart.name = "Mesh";
+
+        MeshRenderer meshRenderer = terrainPart.AddComponent<MeshRenderer>();
+        meshRenderer.sharedMaterial = material;
+        MeshFilter meshFilter = terrainPart.AddComponent<MeshFilter>();
+
+        Mesh mesh = new Mesh();
+
+        mesh.vertices = meshVertices.ToArray();
+
+        int[] tris = new int[meshVertices.Count * 3];
+
+        for (int i = 0; i < meshVertices.Count; i++)
+        {
+            tris[i] = i;
+        }
+
+        mesh.triangles = tris;
+        meshFilter.sharedMesh = mesh;
+        mesh.RecalculateNormals();
+        terrainPart.transform.SetParent(terrain.transform);
     }
 }
