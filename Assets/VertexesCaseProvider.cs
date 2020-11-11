@@ -74,7 +74,7 @@ public class VertexesCaseProvider : MonoBehaviour
         }
     }
 
-    public int ReadCaseForCube(float[,,] terrainDensity)
+    public int ReadCaseForCube(Vector4[,,] terrainDensity, float borderValue)
     {
         int wantedCase = 0;
 
@@ -84,7 +84,7 @@ public class VertexesCaseProvider : MonoBehaviour
             {
                 for (int z = 0; z < terrainDensity.GetLength(2); z++)
                 {
-                    if (terrainDensity[x, y, z] >= 0f)
+                    if (terrainDensity[x, y, z].w >= borderValue)
                     {
                         int counter = 0;
                         counter += (y > 0 ? (x > 0 ? 2 : 1) : (x > 0 ? 3 : 0));

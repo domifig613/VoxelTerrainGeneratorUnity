@@ -50,7 +50,7 @@ public class TerrainGeneratorController : MonoBehaviour
             }
         }
 
-        marchingCubes.GenerateMesh(terrainDensityWithoutPositions, Vector3.zero);
+        //marchingCubes.GenerateMesh(terrainDensityWithoutPositions, Vector3.zero, null);
        // marchingCubesAlgorithm.GenerateMesh(terrainDensity);
     }
 }

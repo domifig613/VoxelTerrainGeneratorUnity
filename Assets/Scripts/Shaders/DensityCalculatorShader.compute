@@ -1,0 +1,46 @@
+﻿#pragma kernel GenerateDensity
+#include "/Includes/ClassicNoise3D.compute" 
+
+static const int threadsNumber = 8;
+
+RWStructuredBuffer<float4> points;
+float3 startPoint;
+float3 densitySize;
+float noiseScale;
+float noiseWeight;
+int octavesCount;
+StructuredBuffer<float3> octavesOffsets;
+
+[numthreads(threadsNumber,threadsNumber,threadsNumber)]
+void GenerateDensity(uint3 id : SV_DispatchThreadID)
+{	
+    if (id.x >= densitySize.x || id.y >= densitySize.y || id.z >= densitySize.z)
+    {
+        return;
+    }
+
+    float3 position = id + startPoint;
+    
+    float noise = 0;
+    float amplitude = 1;
+    float frequency = noiseScale / 100;
+    float currentOctaveWeight = 1;
+
+    for (int i = 0; i < octavesCount; i++)
+    {
+        float currentNoiseValue = cnoise(position * frequency + octavesOffsets[i]);
+        currentNoiseValue = 1 - abs(currentNoiseValue);
+        currentNoiseValue = currentNoiseValue * currentNoiseValue;
+        currentNoiseValue *= currentOctaveWeight;
+        noise += currentNoiseValue * amplitude;
+
+        currentOctaveWeight = max(min(currentNoiseValue, 1), 0);
+        amplitude *= 0.8;
+        frequency *= 2;
+    }
+
+    float densityValue = -position.y + noise * noiseWeight;
+
+    int index = id.x + id.y * densitySize.x + id.z * densitySize.x * densitySize.y;
+    points[index] = float4(position, densityValue);
+}

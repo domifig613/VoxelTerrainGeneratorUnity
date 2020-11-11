@@ -1,13 +1,18 @@
-﻿using UnityEngine;
+﻿using System.Diagnostics;
+using UnityEngine;
 
 public class MarchingCubes : MonoBehaviour
 {
     [SerializeField] private VertexesCaseProvider vertexesCaseProvider;
     [SerializeField] private Material material;
+    [SerializeField] float borderValue = 0f;
 
-    public void GenerateMesh(float[,,] terrainDensity, Vector3 startPoint)
+    public void GenerateMesh(Vector4[,,] terrainDensity, GameObject terrain)
     {
-        float[,,] temporaryDensityArray = new float[2, 2, 2];
+        Stopwatch d = new Stopwatch();
+        d.Start();
+
+        Vector4[,,] temporaryDensityArray = new Vector4[2, 2, 2];
 
         if (vertexesCaseProvider.ReadVerticesIndexesFromFile())
         {
@@ -18,15 +23,18 @@ public class MarchingCubes : MonoBehaviour
                     for (int z = 0; z < terrainDensity.GetLength(2) - 1; z++)
                     {
                         FillTemporaryArray(terrainDensity, temporaryDensityArray, x, y, z);
-                        int[,] trianglesEdges = vertexesCaseProvider.GetVerticesEdgesIndexes(vertexesCaseProvider.ReadCaseForCube(temporaryDensityArray));
-                        DrawMesh(temporaryDensityArray, new Vector3(x + startPoint.x, y + startPoint.y, z + startPoint.z), trianglesEdges);
+                        int[,] trianglesEdges = vertexesCaseProvider.GetVerticesEdgesIndexes(vertexesCaseProvider.ReadCaseForCube(temporaryDensityArray, borderValue));
+                        DrawMesh(temporaryDensityArray, trianglesEdges, terrain, borderValue);
                     }
                 }
             }
         }
+
+        d.Stop();
+        UnityEngine.Debug.Log(d.ElapsedMilliseconds);
     }
 
-    private void FillTemporaryArray(float[,,] terrainDensity, float[,,] temporaryDensityArray, int x, int y, int z)
+    private void FillTemporaryArray(Vector4[,,] terrainDensity, Vector4[,,] temporaryDensityArray, int x, int y, int z)
     {
         temporaryDensityArray[0, 0, 0] = terrainDensity[x, y, z];
         temporaryDensityArray[0, 0, 1] = terrainDensity[x, y, z + 1];
@@ -38,7 +46,7 @@ public class MarchingCubes : MonoBehaviour
         temporaryDensityArray[1, 1, 1] = terrainDensity[x + 1, y + 1, z + 1];
     }
 
-    private void DrawMesh(float[,,] terrainDensity, Vector3 startPoint, int[,] trianglesEdges)
+    private void DrawMesh(Vector4[,,] terrainDensity, int[,] trianglesEdges, GameObject terrain, float borderValue)
     {
         for (int i = 0; i < trianglesEdges.GetLength(0); i++)
         {
@@ -49,29 +57,19 @@ public class MarchingCubes : MonoBehaviour
                 for (int j = 0; j < trianglesEdges.GetLength(1); j++)
                 {
                     int[,] points = vertexesCaseProvider.GetVertexesIndexInArrayByEdge(trianglesEdges[i, j]);
-                    Vector3 firstPoint = new Vector3(points[0, 0], points[0, 1], points[0, 2]) + startPoint;
-                    Vector3 secondPoint = new Vector3(points[1, 0], points[1, 1], points[1, 2]) + startPoint;
+                    Vector3 firstPoint = new Vector3(
+                        terrainDensity[points[0, 0], points[0, 1], points[0, 2]].x,
+                        terrainDensity[points[0, 0], points[0, 1], points[0, 2]].y, 
+                        terrainDensity[points[0, 0], points[0, 1], points[0, 2]].z);
+                    Vector3 secondPoint = new Vector3(
+                        terrainDensity[points[1, 0], points[1, 1], points[1, 2]].x,
+                        terrainDensity[points[1, 0], points[1, 1], points[1, 2]].y,
+                        terrainDensity[points[1, 0], points[1, 1], points[1, 2]].z);
                     float valueToInterpolate;
 
-                    if(terrainDensity[points[0, 0], points[0, 1], points[0, 2]] == 0)
-                    {
-                        valueToInterpolate = 0;
-                    }
-                    else if (terrainDensity[points[1, 0], points[1, 1], points[1, 2]] == 0)
-                    {
-                        valueToInterpolate = 1;
-                    }
-                    else
-                    {
-                        valueToInterpolate = Mathf.Abs(terrainDensity[points[0, 0], points[0, 1], points[0, 2]]) /
-                        (Mathf.Abs(terrainDensity[points[0, 0], points[0, 1], points[0, 2]]) + Mathf.Abs(terrainDensity[points[1, 0], points[1, 1], points[1, 2]]));
-                    }
-                    //Debug.Log("XXX");
-                    //Debug.Log(firstPoint);
-                    //Debug.Log(secondPoint);
-                    //Debug.Log(terrainDensity[points[0, 0], points[0, 1], points[0, 2]]);
-                    //Debug.Log(terrainDensity[points[1, 0], points[1, 1], points[1, 2]]);
-                    //Debug.Log(valueToInterpolate);
+                    valueToInterpolate = (borderValue - terrainDensity[points[0, 0], points[0, 1], points[0, 2]].w) /
+                    (terrainDensity[points[1, 0], points[1, 1], points[1, 2]].w - terrainDensity[points[0, 0], points[0, 1], points[0, 2]].w);
+
                     vertices[j] = Vector3.Lerp(firstPoint, secondPoint, valueToInterpolate);
                 }
 
@@ -82,11 +80,9 @@ public class MarchingCubes : MonoBehaviour
                 meshRenderer.sharedMaterial = material;
                 MeshFilter meshFilter = terrainPart.AddComponent<MeshFilter>();
 
-
                 Mesh mesh = new Mesh();
 
                 mesh.vertices = vertices;
-
 
                 int[] tris = new int[3]
                 {
@@ -115,7 +111,6 @@ public class MarchingCubes : MonoBehaviour
 
                 mesh.uv = uv;
 
-
                 Color[] colors = new Color[3]
                 {
                         Color.red,
@@ -126,20 +121,7 @@ public class MarchingCubes : MonoBehaviour
                 mesh.colors = colors;
 
                 meshFilter.mesh = mesh;
-                terrainPart.transform.SetParent(gameObject.transform);
-            }
-        }
-    }
-
-    private void PrintPoints(int[,] points)
-    {
-       // Debug.Log("XDY");
-
-        for (int i = 0; i < points.GetLength(0); i++)
-        {
-            for (int j = 0; j < points.GetLength(1); j++)
-            {
-              //Debug.Log(points[i, j]);
+                terrainPart.transform.SetParent(terrain.transform);
             }
         }
     }

@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class DensityGenerator : MonoBehaviour
 {
+    [SerializeField] DensityFunction densityFunctionMono;
     private event Action<(Vector3, float)[,,]> onTerrainDenistyGenerated = delegate { };
     private IDensityFunction densityFunction;
     private (Vector3, float)[,,] terrainDensity;
@@ -13,7 +14,7 @@ public class DensityGenerator : MonoBehaviour
     public void StartGenerateTerrainDensity(Vector3 gridSize)
     {
         densityFunction = new SimpleDensityFunction();
-        terrainDensity = densityFunction.GenerateTerrainDensity(gridSize);
+        terrainDensity = densityFunctionMono.GenerateTerrainDensity(gridSize);
         listWasGenerated = true;
         onTerrainDenistyGenerated(terrainDensity);
     }
