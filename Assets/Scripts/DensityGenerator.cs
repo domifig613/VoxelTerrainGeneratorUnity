@@ -1,44 +1,64 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class DensityGenerator : MonoBehaviour
 {
-    [SerializeField] DensityFunction densityFunctionMono;
-    private event Action<(Vector3, float)[,,]> onTerrainDenistyGenerated = delegate { };
-    private IDensityFunction densityFunction;
-    private (Vector3, float)[,,] terrainDensity;
-    private bool listWasGenerated = false;
+    [SerializeField] private ComputeShader computeShader;
 
-    public void StartGenerateTerrainDensity(Vector3 gridSize)
-    {
-        densityFunction = new SimpleDensityFunction();
-        terrainDensity = densityFunctionMono.GenerateTerrainDensity(gridSize);
-        listWasGenerated = true;
-        onTerrainDenistyGenerated(terrainDensity);
-    }
+    private string ComputeFunctionName = "GenerateDensity";
+    private ComputeBuffer buffer;
 
-    public void StartGenerateTerrainDensity(bool reverse, int count, int generateCase)
-    {
-        densityFunction = new DebugDensityFunction();
-        terrainDensity = densityFunction.GenerateTerrainDensity(new Vector3(1,1,1), reverse, count, generateCase);
-        listWasGenerated = true;
-        onTerrainDenistyGenerated(terrainDensity);
-    }
+    private ComputeBuffer octavesOffsetsBuffer;
+    private int cachedOctavesCount = 0;
 
-    public void RegisterToTerrainDensityFunction(Action<(Vector3, float)[,,]> onGenerated)
+    public Vector4[] GetDensity(Vector3 densitySize, float pointsSpace, Vector3 startPoint,
+        float noiseScale, float noiseWeight, int octavesCount)
     {
-        onTerrainDenistyGenerated += onGenerated;
-        
-        if(listWasGenerated)
+        if(octavesOffsetsBuffer == null || cachedOctavesCount != octavesCount)
         {
-            onGenerated(terrainDensity);
+            cachedOctavesCount = octavesCount;
+            octavesOffsetsBuffer = GetOctavesOffsets(octavesCount);
         }
+
+        Vector3 realDensitySize = new Vector3((int)densitySize.x / pointsSpace, (int)densitySize.y / pointsSpace, (int)densitySize.z / pointsSpace);
+        int bufferSize = (int)(realDensitySize.x * realDensitySize.y * realDensitySize.z); 
+        buffer = new ComputeBuffer(bufferSize, sizeof(float) * 4);
+        GenerateDensity(buffer, realDensitySize, startPoint, noiseScale, noiseWeight, octavesCount, octavesOffsetsBuffer);
+        Vector4[] density = new Vector4[bufferSize];
+        buffer.GetData(density);
+        buffer.Release();
+        return density;
     }
 
-    public void UnregisterToTerrainDensityFunction(Action<(Vector3, float)[,,]> onGenerated)
+    private void GenerateDensity(ComputeBuffer pointsBuffer, Vector3 densitySize, Vector3 startPoint,
+        float noiseScale, float noiseWeight, int octavesCount, ComputeBuffer octavesOffsetsBuffer)
     {
-        onTerrainDenistyGenerated -= onGenerated;
+        int kernelId = computeShader.FindKernel(ComputeFunctionName);
+
+        computeShader.SetBuffer(kernelId, "points", pointsBuffer);
+        computeShader.SetVector("startPoint", new Vector4(startPoint.x, startPoint.y, startPoint.z));
+        computeShader.SetVector("densitySize", new Vector4(densitySize.x, densitySize.y, densitySize.z));
+        computeShader.SetFloat("noiseScale", noiseScale);
+        computeShader.SetFloat("noiseWeight", noiseWeight);
+        computeShader.SetInt("octavesCount", octavesCount);
+        computeShader.SetBuffer(kernelId, "octavesOffsets", octavesOffsetsBuffer);
+
+        computeShader.Dispatch(kernelId, (int)densitySize.x, (int)densitySize.y, (int)densitySize.z);
+    }
+
+    private ComputeBuffer GetOctavesOffsets(int octavesCount)
+    {
+        ComputeBuffer buffer = new ComputeBuffer(octavesCount, sizeof(float) * 3);
+        Vector3[] array = new Vector3[octavesCount];
+
+        for (int i = 0; i < octavesCount; i++)
+        {
+            array[i] = new Vector3(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+        }
+
+        buffer.SetData(array);
+        return buffer;
     }
 }

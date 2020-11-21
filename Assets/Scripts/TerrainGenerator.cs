@@ -8,7 +8,7 @@ using Debug = UnityEngine.Debug;
 [ExecuteInEditMode]
 public class TerrainGenerator : MonoBehaviour
 {
-    [SerializeField] DensityGeneratorFromComputeShader densityGenerator;
+    [SerializeField] DensityGenerator densityGenerator;
     [SerializeField] MarchingCubes marchingCubes;
     [SerializeField] GameObject meshGameObject;
 
