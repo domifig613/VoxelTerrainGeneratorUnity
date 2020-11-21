@@ -22,8 +22,8 @@ public class DensityGizmosDrawer : MonoBehaviour
         {
             foreach (var point in pointsToDraw)
             {
-                float colorValue = Mathf.InverseLerp(-16f, 3f, point.w);
-                Gizmos.color = new Color(colorValue, colorValue, colorValue);
+                float colorValue = Mathf.InverseLerp(-3f, 3f, point.w);
+                Gizmos.color = new Color(colorValue, 0.5f, 0.5f);
                 Gizmos.DrawSphere(point, 0.1f);
             }
         }
