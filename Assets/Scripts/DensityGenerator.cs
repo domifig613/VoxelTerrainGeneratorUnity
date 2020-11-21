@@ -14,7 +14,7 @@ public class DensityGenerator : MonoBehaviour
     private int cachedOctavesCount = 0;
 
     public Vector4[] GetDensity(Vector3 densitySize, float pointsSpace, Vector3 startPoint,
-        float noiseScale, float noiseWeight, int octavesCount)
+        float noiseScale, float noiseWeight, int octavesCount, float amplitudeMultiplier, float frequencyMultiplier ,int seed)
     {
         if(octavesOffsetsBuffer == null || cachedOctavesCount != octavesCount)
         {
@@ -22,18 +22,29 @@ public class DensityGenerator : MonoBehaviour
             octavesOffsetsBuffer = GetOctavesOffsets(octavesCount);
         }
 
-        Vector3 realDensitySize = new Vector3((int)densitySize.x / pointsSpace, (int)densitySize.y / pointsSpace, (int)densitySize.z / pointsSpace);
+        Vector3 realDensitySize = new Vector3((int)densitySize.x * pointsSpace, (int)densitySize.y * pointsSpace, (int)densitySize.z * pointsSpace);
         int bufferSize = (int)(realDensitySize.x * realDensitySize.y * realDensitySize.z); 
         buffer = new ComputeBuffer(bufferSize, sizeof(float) * 4);
-        GenerateDensity(buffer, realDensitySize, startPoint, noiseScale, noiseWeight, octavesCount, octavesOffsetsBuffer);
+        GenerateDensity(buffer, realDensitySize, startPoint, noiseScale, noiseWeight, 
+            octavesCount, octavesOffsetsBuffer,amplitudeMultiplier, frequencyMultiplier, seed);
         Vector4[] density = new Vector4[bufferSize];
         buffer.GetData(density);
         buffer.Release();
+
+        if (pointsSpace > 1)
+        {
+            for (int i = 0; i < density.Length; i++)
+            {
+                density[i] = new Vector4(density[i].x / pointsSpace, density[i].y / pointsSpace, density[i].z / pointsSpace, density[i].w);
+            }
+        }
+
         return density;
     }
 
     private void GenerateDensity(ComputeBuffer pointsBuffer, Vector3 densitySize, Vector3 startPoint,
-        float noiseScale, float noiseWeight, int octavesCount, ComputeBuffer octavesOffsetsBuffer)
+        float noiseScale, float noiseWeight, int octavesCount, ComputeBuffer octavesOffsetsBuffer, 
+        float amplitudeMultiplier, float frequencyMultiplier, int seed)
     {
         int kernelId = computeShader.FindKernel(ComputeFunctionName);
 
@@ -44,6 +55,9 @@ public class DensityGenerator : MonoBehaviour
         computeShader.SetFloat("noiseWeight", noiseWeight);
         computeShader.SetInt("octavesCount", octavesCount);
         computeShader.SetBuffer(kernelId, "octavesOffsets", octavesOffsetsBuffer);
+        computeShader.SetFloat("amplitudeMultiplier", amplitudeMultiplier);
+        computeShader.SetFloat("frequencyMultiplier", frequencyMultiplier);
+        computeShader.SetVector("seed", new Vector4(seed, 0, seed, 0));
 
         computeShader.Dispatch(kernelId, (int)densitySize.x, (int)densitySize.y, (int)densitySize.z);
     }

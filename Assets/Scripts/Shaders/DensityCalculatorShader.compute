@@ -6,8 +6,11 @@ static const int threadsNumber = 8;
 RWStructuredBuffer<float4> points;
 float3 startPoint;
 float3 densitySize;
+float3 seed;
 float noiseScale;
 float noiseWeight;
+float amplitudeMultiplier;
+float frequencyMultiplier;
 int octavesCount;
 StructuredBuffer<float3> octavesOffsets;
 
@@ -28,15 +31,15 @@ void GenerateDensity(uint3 id : SV_DispatchThreadID)
 
     for (int i = 0; i < octavesCount; i++)
     {
-        float currentNoiseValue = cnoise(position * frequency + octavesOffsets[i]);
+        float currentNoiseValue = cnoise(position * frequency + octavesOffsets[i] + seed);
         currentNoiseValue = 1 - abs(currentNoiseValue);
         currentNoiseValue = currentNoiseValue * currentNoiseValue;
         currentNoiseValue *= currentOctaveWeight;
         noise += currentNoiseValue * amplitude;
 
         currentOctaveWeight = max(min(currentNoiseValue, 1), 0);
-        amplitude *= 0.8;
-        frequency *= 2;
+        amplitude *= amplitudeMultiplier;
+        frequency *= frequencyMultiplier;
     }
 
     float densityValue = -position.y + noise * noiseWeight;

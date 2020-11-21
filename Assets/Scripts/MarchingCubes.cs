@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine;
 
 public class MarchingCubes : MonoBehaviour
@@ -87,20 +86,23 @@ public class MarchingCubes : MonoBehaviour
         meshRenderer.sharedMaterial = material;
         MeshFilter meshFilter = terrainPart.AddComponent<MeshFilter>();
 
-        Mesh mesh = new Mesh();
-
-        mesh.vertices = meshVertices.ToArray();
-
-        int[] tris = new int[meshVertices.Count * 3];
-
-        for (int i = 0; i < meshVertices.Count; i++)
+        if (meshVertices.Count < 64000)
         {
-            tris[i] = i;
-        }
+            Mesh mesh = new Mesh();
 
-        mesh.triangles = tris;
-        meshFilter.sharedMesh = mesh;
-        mesh.RecalculateNormals();
-        terrainPart.transform.SetParent(terrain.transform);
+            mesh.vertices = meshVertices.ToArray();
+
+            int[] tris = new int[meshVertices.Count * 3];
+
+            for (int i = 0; i < meshVertices.Count; i++)
+            {
+                tris[i] = i;
+            }
+
+            mesh.triangles = tris;
+            meshFilter.sharedMesh = mesh;
+            mesh.RecalculateNormals();
+            terrainPart.transform.SetParent(terrain.transform);
+        }
     }
 }

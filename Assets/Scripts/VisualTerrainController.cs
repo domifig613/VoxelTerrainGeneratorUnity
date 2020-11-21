@@ -17,6 +17,14 @@ public class VisualTerrainController : MonoBehaviour
 
     private Texture2D texture;
 
+    public void SetWaterPosition(Vector3 startPoint, Vector2 terrainSize)
+    {
+        water.transform.localScale = new Vector3(terrainSize.x/10f, 1, terrainSize.y/10f);
+        water.transform.position = 
+            new Vector3(startPoint.x + terrainSize.x/2f,water.transform.position.y, startPoint.z + terrainSize.y/2f);
+
+    }
+
     void Update()
     {
         RefreshWater();
@@ -49,9 +57,9 @@ public class VisualTerrainController : MonoBehaviour
 
         texture.SetPixels(gradientColors);
         texture.Apply();
-        //WriteTextureForTest();
     }
 
+    //debug
     private void WriteTextureForTest()
     {
         if (!File.Exists(@"D:\Texture.png"))
