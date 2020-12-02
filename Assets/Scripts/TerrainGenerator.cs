@@ -7,10 +7,11 @@ public class TerrainGenerator : MonoBehaviour
     [SerializeField] private DensityGenerator densityGenerator;
     [SerializeField] private MarchingCubes marchingCubes;
     [SerializeField] private GameObject meshGameObject;
-    [SerializeField] private VisualTerrainController visualTerrainController;
+    [SerializeField] private VoxelsOctreeGenerator voxelsOctree;
 
     [Header("Terrain settings")]
     [SerializeField] private Vector3 startPoint;
+    [SerializeField] private int sizeMultiplier;
 
     [Header("Density settings")]
     [SerializeField] private Vector3 densitySize;
@@ -63,7 +64,6 @@ public class TerrainGenerator : MonoBehaviour
         {
             wasUpdate = false;
             DestroyEarlierMesh();
-            visualTerrainController.SetWaterPosition(startPoint / pointsSpace, new Vector2(densitySize.x ,densitySize.z));
             GenerateTerrain();
         }
     }
@@ -75,13 +75,14 @@ public class TerrainGenerator : MonoBehaviour
 
     private void GenerateTerrain()
     {
-        if ( densitySize.x > 0 && densitySize.y > 0 && densitySize.z > 0)
+        if (densitySize.x > 0 && densitySize.y > 0 && densitySize.z > 0)
         {
             startPoint = new Vector3((int)startPoint.x, (int)startPoint.y, (int)startPoint.z);
             densitySize = new Vector3((int)densitySize.x, (int)densitySize.y, (int)densitySize.z);
 
             Vector4[] density = densityGenerator.GetDensity(
-                densitySize, pointsSpace, startPoint, noiseScale, noiseWeight, octavesCount, amplitudeMultiplier, frequencyMultiplier, seed);
+                densitySize, pointsSpace, startPoint, noiseScale, noiseWeight, octavesCount,
+                amplitudeMultiplier, frequencyMultiplier, seed, sizeMultiplier);
 
             Vector4[,,] convertedDensity = ConvertArrayOfVector4To3DimensionalArray(density, densitySize * pointsSpace);
 
@@ -94,7 +95,13 @@ public class TerrainGenerator : MonoBehaviour
                 densityGizmosDrawer.ClearPoints();
             }
 
-            marchingCubes.GenerateMesh(convertedDensity, meshGameObject);
+            OctreeElement root = voxelsOctree.GetOctreeVoxel(convertedDensity);
+
+            if (root != null)
+            {
+                marchingCubes.GenerateMesh(root, meshGameObject);
+            }
+            //marchingCubes.GenerateMesh(convertedDensity, meshGameObject);
         }
     }
 

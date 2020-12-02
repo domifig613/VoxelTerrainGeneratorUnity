@@ -14,7 +14,8 @@ public class DensityGenerator : MonoBehaviour
     private int cachedOctavesCount = 0;
 
     public Vector4[] GetDensity(Vector3 densitySize, float pointsSpace, Vector3 startPoint,
-        float noiseScale, float noiseWeight, int octavesCount, float amplitudeMultiplier, float frequencyMultiplier ,int seed)
+        float noiseScale, float noiseWeight, int octavesCount, float amplitudeMultiplier, 
+        float frequencyMultiplier ,int seed, int terrainSizeMultiplier)
     {
         if(octavesOffsetsBuffer == null || cachedOctavesCount != octavesCount)
         {
@@ -26,7 +27,7 @@ public class DensityGenerator : MonoBehaviour
         int bufferSize = (int)(realDensitySize.x * realDensitySize.y * realDensitySize.z); 
         buffer = new ComputeBuffer(bufferSize, sizeof(float) * 4);
         GenerateDensity(buffer, realDensitySize, startPoint, noiseScale, noiseWeight, 
-            octavesCount, octavesOffsetsBuffer,amplitudeMultiplier, frequencyMultiplier, seed);
+            octavesCount, octavesOffsetsBuffer,amplitudeMultiplier, frequencyMultiplier, seed, terrainSizeMultiplier);
         Vector4[] density = new Vector4[bufferSize];
         buffer.GetData(density);
         buffer.Release();
@@ -44,7 +45,7 @@ public class DensityGenerator : MonoBehaviour
 
     private void GenerateDensity(ComputeBuffer pointsBuffer, Vector3 densitySize, Vector3 startPoint,
         float noiseScale, float noiseWeight, int octavesCount, ComputeBuffer octavesOffsetsBuffer, 
-        float amplitudeMultiplier, float frequencyMultiplier, int seed)
+        float amplitudeMultiplier, float frequencyMultiplier, int seed, int terrainSizeMultiplier)
     {
         int kernelId = computeShader.FindKernel(ComputeFunctionName);
 
@@ -58,6 +59,7 @@ public class DensityGenerator : MonoBehaviour
         computeShader.SetFloat("amplitudeMultiplier", amplitudeMultiplier);
         computeShader.SetFloat("frequencyMultiplier", frequencyMultiplier);
         computeShader.SetVector("seed", new Vector4(seed, 0, seed, 0));
+        computeShader.SetInt("densitySizeMultiplier", terrainSizeMultiplier);
 
         computeShader.Dispatch(kernelId, (int)densitySize.x, (int)densitySize.y, (int)densitySize.z);
     }

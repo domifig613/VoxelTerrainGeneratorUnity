@@ -95,6 +95,32 @@ public class VertexesCaseProvider : MonoBehaviour
             }
         }
 
+        Debug.Log("zz " + wantedCase);
+        return wantedCase;
+    }
+
+    public int ReadCaseForCube(float[,,] density, float borderValue)
+    {
+        int wantedCase = 0;
+
+        for (int x = 0; x < density.GetLength(0); x++)
+        {
+            for (int y = 0; y < density.GetLength(1); y++)
+            {
+                for (int z = 0; z < density.GetLength(2); z++)
+                {
+                    if (density[x, y, z] >= borderValue)
+                    {
+                        int counter = 0;
+                        counter += (y > 0 ? (x > 0 ? 2 : 1) : (x > 0 ? 3 : 0));
+                        counter += (z > 0 ? 4 : 0);
+                        wantedCase += (int)Math.Pow(2, counter);
+                    }
+                }
+            }
+        }
+
+        Debug.Log("zzz " + wantedCase);
         return wantedCase;
     }
 
@@ -110,6 +136,7 @@ public class VertexesCaseProvider : MonoBehaviour
             }
         }
 
+        Debug.Log("wanted Case " + wantedCase + " edges Index " + edgesIndexes);
         return edgesIndexes;
     }
 
