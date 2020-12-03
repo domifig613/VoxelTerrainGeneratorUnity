@@ -1,5 +1,7 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 [ExecuteInEditMode]
 public class TerrainGenerator : MonoBehaviour
@@ -77,6 +79,10 @@ public class TerrainGenerator : MonoBehaviour
     {
         if (densitySize.x > 0 && densitySize.y > 0 && densitySize.z > 0)
         {
+            Stopwatch s = new Stopwatch();
+            s.Restart();
+            s.Start();
+
             startPoint = new Vector3((int)startPoint.x, (int)startPoint.y, (int)startPoint.z);
             densitySize = new Vector3((int)densitySize.x, (int)densitySize.y, (int)densitySize.z);
 
@@ -102,6 +108,9 @@ public class TerrainGenerator : MonoBehaviour
                 marchingCubes.GenerateMesh(root, meshGameObject);
             }
             //marchingCubes.GenerateMesh(convertedDensity, meshGameObject);
+
+            s.Stop();
+            Debug.Log("ooo " + s.Elapsed.TotalMilliseconds);
         }
     }
 

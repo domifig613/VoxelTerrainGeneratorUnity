@@ -25,7 +25,6 @@ public class MarchingCubes : MonoBehaviour
                     {
                         FillTemporaryArray(terrainDensity, temporaryDensityArray, x, y, z);
                         int[,] trianglesEdges = vertexesCaseProvider.GetVerticesEdgesIndexes(vertexesCaseProvider.ReadCaseForCube(temporaryDensityArray, borderValue));
-                        Debug.Log("yy " + trianglesEdges[0, 0]);
                         CalclulateVertices(temporaryDensityArray, trianglesEdges, borderValue);
                     }
                 }
@@ -56,9 +55,12 @@ public class MarchingCubes : MonoBehaviour
                         if (nextElements == null)
                         {
                             Voxel voxel = octreeBranches[i] as Voxel;
-                            int[,] trianglesEdges = vertexesCaseProvider.GetVerticesEdgesIndexes(vertexesCaseProvider.ReadCaseForCube(voxel.Density, borderValue));
-                            Debug.Log("yyy " + trianglesEdges[0, 0]);
-                            CalclulateVertices(voxel, trianglesEdges, borderValue);
+
+                            if (voxel.Drawable)
+                            {
+                                int[,] trianglesEdges = vertexesCaseProvider.GetVerticesEdgesIndexes(vertexesCaseProvider.ReadCaseForCube(voxel.Density, borderValue));
+                                CalclulateVertices(voxel, trianglesEdges, borderValue);
+                            }
                         }
                         else
                         {
@@ -137,7 +139,6 @@ public class MarchingCubes : MonoBehaviour
 
                     vertices[j] = Vector3.Lerp(firstPoint, secondPoint, valueToInterpolate);
                 }
-               // Debug.Log("xxx " + vertices[0]);
 
                 meshVertices.AddRange(vertices);
             }
@@ -154,11 +155,9 @@ public class MarchingCubes : MonoBehaviour
             MeshRenderer meshRenderer = terrainPart.AddComponent<MeshRenderer>();
             meshRenderer.sharedMaterial = material;
             MeshFilter meshFilter = terrainPart.AddComponent<MeshFilter>();
-
             Mesh mesh = new Mesh();
 
             mesh.vertices = meshVertices.ToArray();
-            Debug.Log("ccc " + meshVertices.Count);
             int[] tris = new int[meshVertices.Count * 3];
 
             for (int i = 0; i < meshVertices.Count; i++)

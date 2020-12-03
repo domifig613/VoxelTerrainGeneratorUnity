@@ -21,6 +21,14 @@ public class OctreeBranch : OctreeElement
         base.xRange = xRange;
         base.yRange = yRange;
         base.zRange = zRange;
+
+        foreach (var element in nextElements)
+        {
+            if (element != null)
+            {
+                element.SetPrevious(this);
+            }
+        }
     }
 
     public OctreeBranch(OctreeElement[] nextElements) : base(nextElements)

@@ -95,7 +95,7 @@ public class VertexesCaseProvider : MonoBehaviour
             }
         }
 
-        Debug.Log("zz " + wantedCase);
+        //Debug.Log("zz " + wantedCase);
         return wantedCase;
     }
 
@@ -120,7 +120,7 @@ public class VertexesCaseProvider : MonoBehaviour
             }
         }
 
-        Debug.Log("zzz " + wantedCase);
+        //Debug.Log("zzz " + wantedCase);
         return wantedCase;
     }
 
@@ -136,7 +136,7 @@ public class VertexesCaseProvider : MonoBehaviour
             }
         }
 
-        Debug.Log("wanted Case " + wantedCase + " edges Index " + edgesIndexes);
+        //Debug.Log("wanted Case " + wantedCase + " edges Index " + edgesIndexes);
         return edgesIndexes;
     }
 

@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public class VoxelsOctreeGenerator : MonoBehaviour
 {
@@ -12,7 +13,7 @@ public class VoxelsOctreeGenerator : MonoBehaviour
         if (density.GetLength(0) > 1 && density.GetLength(1) > 1 && density.GetLength(2) > 1)
         {
             int treeSize = GetTreeSize(density.GetLength(0) - 1, density.GetLength(1) - 1, density.GetLength(2) - 1);
-            Debug.Log("treeSize: " + treeSize);
+            // Debug.Log("treeSize: " + treeSize);
 
             List<OctreeElement> branchesWithVoxels = InitVoxels(density);
 
@@ -39,48 +40,12 @@ public class VoxelsOctreeGenerator : MonoBehaviour
             }
 
             root = branchesChildren[0];
-            CalculateDensity();
+            //   CalculateDensity();
+            SetVoxelsType(root);
             return root;
         }
 
         return null;
-    }
-
-    private void CalculateDensity()
-    {
-        List<OctreeElement> octreeBranches = root.NextElements.ToList();
-        int voxelCount = 0;
-        float density = 0;
-
-        while(octreeBranches.Count != 0)
-        {
-            int count = octreeBranches.Count;
-
-            for (int i = count -1 ; i >= 0; i--)
-            {
-                if (octreeBranches[i] != null)
-                {
-                    OctreeElement[] nextElements = octreeBranches[i].NextElements;
-
-                    if (nextElements == null)
-                    {
-                        Voxel voxel = octreeBranches[i] as Voxel;
-                        voxel.SetType();
-                        voxelCount++;
-                        density += voxel.GetSumDensity();
-                    }
-                    else
-                    {
-                        octreeBranches.AddRange(nextElements);
-                    }
-                }
-
-                octreeBranches.RemoveAt(i);
-            }
-        }
-
-        Debug.Log("voxelCount " + voxelCount);
-        Debug.Log("denisty " + density / voxelCount);
     }
 
     private void FillNextLevelOfTree(List<OctreeElement> branchesChildren, List<OctreeElement> biggerBranches, float xDifferent, float yDifferent, float zDifferent, Vector3 size, Vector3 startPoint)
@@ -105,7 +70,7 @@ public class VoxelsOctreeGenerator : MonoBehaviour
                     for (int i = branchesChildren.Count - 1; i >= 0; i--)
                     {
                         if (branchesChildren[i].IsPointInFocusPoint(new Vector3(itemX, itemY, itemZ),
-                            new Vector3(xDifferent*2, yDifferent*2, zDifferent*2)))
+                            new Vector3(xDifferent * 2, yDifferent * 2, zDifferent * 2)))
                         {
                             branchesToAdd.Add(branchesChildren[i]);
                             branchesChildren.RemoveAt(i);
@@ -120,7 +85,7 @@ public class VoxelsOctreeGenerator : MonoBehaviour
                 }
             }
         }
-  
+
         if (branchesChildren.Count > 0)
         {
             Debug.LogError("old branches > 0 count" + branchesChildren.Count);
@@ -145,7 +110,7 @@ public class VoxelsOctreeGenerator : MonoBehaviour
 
         for (int i = 1; i <= count; i++)
         {
-            focusPoints.Add((int)((startPosition + different * i * 4) - (2*different)));
+            focusPoints.Add((int)((startPosition + different * i * 4) - (2 * different)));
         }
 
         if (densityLenght % 4 != 0)
@@ -209,8 +174,7 @@ public class VoxelsOctreeGenerator : MonoBehaviour
                 {
                     OctreeElement[] octreeElements = CreateVoxelsLeaf(density, xSize, ySize, zSize, currentX, currentY, currentZ);
                     OctreeBranch branchWithVoxels = new OctreeBranch(octreeElements,
-                        (currentX, currentX + 2), (currentY, currentY + 2), (currentZ, currentZ + 2)); ;
-
+                        (currentX, currentX + 2), (currentY, currentY + 2), (currentZ, currentZ + 2));
                     octreeElementsWithVoxels.Add(branchWithVoxels);
                     //v++;
                 }
@@ -243,7 +207,7 @@ public class VoxelsOctreeGenerator : MonoBehaviour
                 {
                     if (x <= xSize - 1 && y <= ySize - 1 && z <= zSize - 1)
                     {
-                        Voxel voxel = new Voxel((x, x+1),(y,y+1),(z, z+1));
+                        Voxel voxel = new Voxel((x, x + 1), (y, y + 1), (z, z + 1));
                         float[,,] densityForVoxel = GetDensityForVoxel(density, new Vector3(x, y, z));
                         voxel.SetDensity(densityForVoxel);
                         octreeElements[elements] = voxel;
@@ -277,5 +241,41 @@ public class VoxelsOctreeGenerator : MonoBehaviour
         }
 
         return densityForVoxel;
+    }
+
+    public void SetVoxelsType(OctreeElement root)
+    {
+        Stopwatch d = new Stopwatch();
+        d.Restart();
+
+        List<OctreeElement> octreeBranches = root.NextElements.ToList();
+
+        while (octreeBranches.Count != 0)
+        {
+            int count = octreeBranches.Count;
+
+            for (int i = count - 1; i >= 0; i--)
+            {
+                if (octreeBranches[i] != null)
+                {
+                    OctreeElement[] nextElements = octreeBranches[i].NextElements;
+
+                    if (nextElements == null)
+                    {
+                        Voxel voxel = octreeBranches[i] as Voxel;
+                        voxel.SetType();
+                    }
+                    else
+                    {
+                        octreeBranches.AddRange(nextElements);
+                    }
+                }
+
+                octreeBranches.RemoveAt(i);
+            }
+        }
+
+        d.Stop();
+        Debug.Log("d: " + d.Elapsed.TotalMilliseconds);
     }
 }

@@ -1,13 +1,14 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Voxel : OctreeElement
 {
     private float[,,] density;
     private VoxelType type;
+    private bool drawable = false;
 
     public float[,,] Density => density;
+    public bool Drawable => drawable;
+    public VoxelType Type => type;
 
     public Voxel((int, int) xRange, (int, int) yRange, (int, int) zRange) : base(true)
     {
@@ -52,11 +53,11 @@ public class Voxel : OctreeElement
             {
                 for (int k = 0; k < density.GetLength(2); k++)
                 {
-                    if(density[i, j, k] >= 0)
+                    if (density[i, j, k] >= 0)
                     {
                         densityPlus = true;
                     }
-                    else if(density[i, j, k] < 0)
+                    else if (density[i, j, k] < 0)
                     {
                         densityMinus = true;
                     }
@@ -64,7 +65,20 @@ public class Voxel : OctreeElement
             }
         }
 
-        type = densityPlus && densityMinus ? VoxelType.Rock : VoxelType.Air;
+        if (!densityPlus && densityMinus)
+        {
+            type = VoxelType.Air;
+        }
+        else
+        {
+            PreviousElement.GetTypeNextTo(this, xRange, yRange, zRange);
+            type = densityPlus && densityMinus ? VoxelType.Rock : VoxelType.Air;
+        }
+
+        if (densityPlus && densityMinus)
+        {
+            drawable = true;
+        }
     }
 
     public Vector3 GetRange(int x, int y, int z)
