@@ -1,8 +1,10 @@
-﻿public enum VoxelType
+﻿public enum VoxelType //voxel class uses enum number!
 {
-    Undefined = 0,
-    Rock = 1,
-    Soil = 2,
+    UnderScale = 0,
+    Undefined = 1,
+    Rock = 2,
     Water = 3,
-    Air = 4,
+    Soil = 4,
+    Sand = 5,
+    Air = 6,
 }

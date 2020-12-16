@@ -1,11 +1,11 @@
 ﻿using System;
 using UnityEngine;
 
-public class VertexesCaseProvider : MonoBehaviour
+public static class VertexesCaseProvider
 {
-    private int[,,] verticesIndexes = new int[256, 5, 3];
+    private static int[,,] verticesIndexes = new int[256, 5, 3];
 
-    private int[,,] edgesBetweenVertexIndex = new int[,,]
+    private static int[,,] edgesBetweenVertexIndex = new int[,,]
     {
         {{0,0,0}, {0,1,0}},
         {{0,1,0}, {1,1,0}},
@@ -21,7 +21,7 @@ public class VertexesCaseProvider : MonoBehaviour
         {{1,0,0}, {1,0,1}},
     };
 
-    public bool ReadVerticesIndexesFromFile()
+    public static bool ReadVerticesIndexesFromFile()
     {
         try
         {
@@ -74,7 +74,7 @@ public class VertexesCaseProvider : MonoBehaviour
         }
     }
 
-    public int ReadCaseForCube(Vector4[,,] terrainDensity, float borderValue)
+    public static int ReadCaseForCube(Vector4[,,] terrainDensity, float borderValue)
     {
         int wantedCase = 0;
 
@@ -99,7 +99,7 @@ public class VertexesCaseProvider : MonoBehaviour
         return wantedCase;
     }
 
-    public int ReadCaseForCube(float[,,] density, float borderValue)
+    public static int ReadCaseForCube(float[,,] density, float borderValue)
     {
         int wantedCase = 0;
 
@@ -124,7 +124,7 @@ public class VertexesCaseProvider : MonoBehaviour
         return wantedCase;
     }
 
-    public int[,] GetVerticesEdgesIndexes(int wantedCase)
+    public static int[,] GetVerticesEdgesIndexes(int wantedCase)
     {
         int[,] edgesIndexes = new int[5, 3];
 
@@ -140,8 +140,8 @@ public class VertexesCaseProvider : MonoBehaviour
         return edgesIndexes;
     }
 
-    public int[,] GetVertexesIndexInArrayByEdge(int edgeIndex)
-    {
+    public static int[,] GetVertexesIndexInArrayByEdge(int edgeIndex)
+    { 
         int[,] vertex = new int[2,3];
 
         for (int i = 0; i < 2; i++)

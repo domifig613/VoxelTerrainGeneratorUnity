@@ -10,6 +10,8 @@ public class TerrainGenerator : MonoBehaviour
     [SerializeField] private MarchingCubes marchingCubes;
     [SerializeField] private GameObject meshGameObject;
     [SerializeField] private VoxelsOctreeGenerator voxelsOctree;
+    [SerializeField] private CameraMover cameraMover;
+    [SerializeField] private SettingsController settingsUI;
 
     [Header("Terrain settings")]
     [SerializeField] private Vector3 startPoint;
@@ -36,6 +38,16 @@ public class TerrainGenerator : MonoBehaviour
 
     public static bool wasUpdate = false;
 
+    public void CreateTerrain(int size, int noiseScale, int noiseWeight)
+    {
+        this.noiseScale = noiseScale;
+        this.noiseWeight = noiseWeight;
+        xCount = size;
+        zCount = size;
+        bigTerrainEnabled = true;
+        this.enabled = true;
+    }
+
     public void OnEnable()
     {
         if (bigTerrainEnabled)
@@ -47,17 +59,36 @@ public class TerrainGenerator : MonoBehaviour
 
     private IEnumerator GenerateBigTerrainCoroutine()
     {
-        startPoint = Vector3.zero;
+        yield return new WaitForEndOfFrame();
+
+        float startPointY = startPoint.y;
+        startPoint = new Vector3(0, startPointY, 0);
+        Vector3 fullSize = new Vector3((densitySize.x - 1) * xCount, densitySize.y, (densitySize.z - 1) * zCount);
+        voxelsOctree.SetDensitySize(startPoint, fullSize);
+        cameraMover.OnTerrainGeneration(startPoint, fullSize);
+
+        int iteration = 0;
+        int lastIteration = xCount * zCount;
 
         for (int i = 0; i < xCount; i++)
         {
             for (int j = 0; j < zCount; j++)
             {
-                startPoint = new Vector3((densitySize.x - 1) * i, 0f, (densitySize.z - 1) * j);
+                startPoint = new Vector3((densitySize.x - 1) * i, startPointY, (densitySize.z - 1) * j);
                 GenerateTerrain();
+                settingsUI.OnTerrainPartGenerated((float)(iteration-1) / (float)lastIteration);
+                iteration++;
                 yield return null;
             }
         }
+       
+        startPoint = new Vector3(0, startPointY, 0);
+        GenerateTerrain();
+
+        yield return new WaitForEndOfFrame();
+        bigTerrainEnabled = false;
+        settingsUI.OnTerrainGenerated();
+        this.enabled = false;
     }
 
     private void Update()
@@ -65,8 +96,6 @@ public class TerrainGenerator : MonoBehaviour
         if (wasUpdate)
         {
             wasUpdate = false;
-            DestroyEarlierMesh();
-            GenerateTerrain();
         }
     }
 
@@ -92,14 +121,7 @@ public class TerrainGenerator : MonoBehaviour
 
             Vector4[,,] convertedDensity = ConvertArrayOfVector4To3DimensionalArray(density, densitySize * pointsSpace);
 
-            if (enableGizmosDensityDrawer)
-            {
-                densityGizmosDrawer.SetPoints(density);
-            }
-            else
-            {
-                densityGizmosDrawer.ClearPoints();
-            }
+            DrawGizmosIfEnable(density);
 
             OctreeElement root = voxelsOctree.GetOctreeVoxel(convertedDensity);
 
@@ -110,7 +132,19 @@ public class TerrainGenerator : MonoBehaviour
             //marchingCubes.GenerateMesh(convertedDensity, meshGameObject);
 
             s.Stop();
-            Debug.Log("ooo " + s.Elapsed.TotalMilliseconds);
+            //Debug.Log("ooo " + s.Elapsed.TotalMilliseconds);
+        }
+    }
+
+    private void DrawGizmosIfEnable(Vector4[] density)
+    {
+        if (enableGizmosDensityDrawer)
+        {
+            densityGizmosDrawer.SetPoints(density);
+        }
+        else
+        {
+            densityGizmosDrawer.ClearPoints();
         }
     }
 

@@ -7,6 +7,14 @@ using Debug = UnityEngine.Debug;
 public class VoxelsOctreeGenerator : MonoBehaviour
 {
     private OctreeElement root;
+    private Vector3 startPointDensity;
+    private Vector3 bigSize;
+
+    public void SetDensitySize(Vector3 startPoint, Vector3 bigSize)
+    {
+        this.startPointDensity = startPoint;
+        this.bigSize = bigSize;
+    }
 
     public OctreeElement GetOctreeVoxel(Vector4[,,] density)
     {
@@ -40,7 +48,12 @@ public class VoxelsOctreeGenerator : MonoBehaviour
             }
 
             root = branchesChildren[0];
-            //   CalculateDensity();
+            SetVoxelsType(root);
+            SetVoxelsType(root);
+            SetVoxelsType(root);
+            SetVoxelsType(root);
+            SetVoxelsType(root);
+            SetVoxelsType(root);
             SetVoxelsType(root);
             return root;
         }
@@ -164,15 +177,21 @@ public class VoxelsOctreeGenerator : MonoBehaviour
         int ySize = density.GetLength(1) - 1;
         int zSize = density.GetLength(2) - 1;
 
+        int startPointX = (int)density[0, 0, 0].x;
+        int startPointY = (int)density[0, 0, 0].y;
+        int startPointZ = (int)density[0, 0, 0].z;
+
         //int v = 0;
 
-        for (int currentX = 0; currentX < xSize; currentX += 2)
+        for (int currentX = startPointX; currentX < xSize + startPointX; currentX += 2)
         {
-            for (int currentY = 0; currentY < ySize; currentY += 2)
+            for (int currentY = startPointY; currentY < ySize + startPointY; currentY += 2)
             {
-                for (int currentZ = 0; currentZ < zSize; currentZ += 2)
+                for (int currentZ = startPointZ; currentZ < zSize + startPointZ; currentZ += 2)
                 {
-                    OctreeElement[] octreeElements = CreateVoxelsLeaf(density, xSize, ySize, zSize, currentX, currentY, currentZ);
+                    OctreeElement[] octreeElements = CreateVoxelsLeaf(density, new Vector3(xSize + startPointX, 
+                        ySize + startPointY, zSize + startPointZ), new Vector3 (currentX, currentY, currentZ),
+                        new Vector3(startPointX, startPointY, startPointZ));
                     OctreeBranch branchWithVoxels = new OctreeBranch(octreeElements,
                         (currentX, currentX + 2), (currentY, currentY + 2), (currentZ, currentZ + 2));
                     octreeElementsWithVoxels.Add(branchWithVoxels);
@@ -194,23 +213,28 @@ public class VoxelsOctreeGenerator : MonoBehaviour
         return octreeElementsWithVoxels;
     }
 
-    private OctreeElement[] CreateVoxelsLeaf(Vector4[,,] density, int xSize, int ySize, int zSize, int currentX, int currentY, int currentZ)
+    private OctreeElement[] CreateVoxelsLeaf(Vector4[,,] density, Vector3 size, Vector3 currentPosition, Vector3 startPoint)
     {
         OctreeElement[] octreeElements = new OctreeElement[8];
         int elements = 0;
 
-        for (int x = currentX; x < currentX + 2; x++)
+        for (int x = (int)currentPosition.x; x < (int)currentPosition.x + 2; x++)
         {
-            for (int y = currentY; y < currentY + 2; y++)
+            for (int y = (int)currentPosition.y; y < (int)currentPosition.y + 2; y++)
             {
-                for (int z = currentZ; z < currentZ + 2; z++)
+                for (int z = (int)currentPosition.z; z < (int)currentPosition.z + 2; z++)
                 {
-                    if (x <= xSize - 1 && y <= ySize - 1 && z <= zSize - 1)
+                    if (x <= (int)size.x - 1 && y <= (int)size.y - 1 && z <= (int)size.z - 1)
                     {
-                        Voxel voxel = new Voxel((x, x + 1), (y, y + 1), (z, z + 1));
-                        float[,,] densityForVoxel = GetDensityForVoxel(density, new Vector3(x, y, z));
+                        Voxel voxel = new Voxel((x, x + 1), (y, y + 1), (z, z + 1), new Vector2(x/bigSize.x, z/bigSize.z));
+                        (float[,,] densityForVoxel, bool edge) = GetDensityForVoxel(density, new Vector3(x, y, z), startPoint);
                         voxel.SetDensity(densityForVoxel);
                         octreeElements[elements] = voxel;
+                        
+                        if(edge)
+                        {
+                            voxel.Edge = true;
+                        }
                     }
                     else
                     {
@@ -225,9 +249,10 @@ public class VoxelsOctreeGenerator : MonoBehaviour
         return octreeElements;
     }
 
-    private float[,,] GetDensityForVoxel(Vector4[,,] density, Vector3 position)
+    private (float[,,], bool) GetDensityForVoxel(Vector4[,,] density, Vector3 position, Vector3 startPoint)
     {
         float[,,] densityForVoxel = new float[2, 2, 2];
+        bool edge = false;
 
         for (int x = 0; x < 2; x++)
         {
@@ -235,12 +260,26 @@ public class VoxelsOctreeGenerator : MonoBehaviour
             {
                 for (int z = 0; z < 2; z++)
                 {
-                    densityForVoxel[x, y, z] = density[(int)position.x + x, (int)position.y + y, (int)position.z + z].w;
+                    if ((int)position.x + x == startPointDensity.x
+                     || (int)position.y + y == startPointDensity.y
+                     || (int)position.z + z == startPointDensity.z
+                     || (int)position.x + x == bigSize.x
+                     || (int)position.z + z == bigSize.z
+                     )
+                    {
+                        densityForVoxel[x, y, z] = -0.01f;
+                        edge = true;
+                    }
+                    else
+                    {
+                        densityForVoxel[x, y, z] = density[(int)position.x + x - (int)startPoint.x, 
+                            (int)position.y + y - (int)startPoint.y, (int)position.z + z - (int)startPoint.z].w;
+                    }
                 }
             }
         }
 
-        return densityForVoxel;
+        return (densityForVoxel, edge);
     }
 
     public void SetVoxelsType(OctreeElement root)
@@ -276,6 +315,6 @@ public class VoxelsOctreeGenerator : MonoBehaviour
         }
 
         d.Stop();
-        Debug.Log("d: " + d.Elapsed.TotalMilliseconds);
+        //Debug.Log("d: " + d.Elapsed.TotalMilliseconds);
     }
 }

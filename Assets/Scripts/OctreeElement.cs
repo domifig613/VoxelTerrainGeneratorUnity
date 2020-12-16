@@ -73,15 +73,13 @@ public abstract class OctreeElement
                         }
                     }
 
-                    if (!elementFilled && previousElement.ElementInRange((x, x + 1), (y, y + 1), (z, z + 1)))
+                    if (!elementFilled && previousElement != null && previousElement.ElementInRange((x, x + 1), (y, y + 1), (z, z + 1)))
                     {
                         voxelsTypes.Add(previousElement.GetTypeInSpecificPosition(this, x, y, z));
                     }
                 }
             }
         }
-
-        //Debug.Log("ggg " + voxelsTypes.FindAll(x => x == VoxelType.Undefined).Count);
 
         return voxelsTypes;
     }
@@ -98,15 +96,20 @@ public abstract class OctreeElement
             {
                 if (nextElements[i] != null && nextElements[i] != seekersElement)
                 {
-                    if (nextElements[i].ElementInRange((x, x + 1), (y, y + 1), (z, z + 1)))
+                    if (nextElements[i].ElementInRange((x, x +1), (y, y + 1), (z, z + 1)))
                     {
                         return nextElements[i].GetTypeInSpecificPosition(this, x, y ,z);
                     }
                 }
             }
+
+            if(previousElement != null)
+            {
+                return previousElement.GetTypeInSpecificPosition(this, x, y, z);
+            }
         }
 
-        return VoxelType.Undefined;
+        return VoxelType.UnderScale;
     }
 
     public bool ElementInRange((int, int) rangeX, (int, int) rangeY, (int, int) rangeZ)
